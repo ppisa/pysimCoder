@@ -22,6 +22,7 @@ dictTemplates = {
                  'samd21.tmf' : embedded,
                  'stm32h7.tmf' : embedded,
                  'dspic.tmf' : embedded,
+                 'rtems.tmf' : embedded,
                  }
 
 
