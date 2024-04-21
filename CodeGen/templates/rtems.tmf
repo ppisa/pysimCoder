@@ -1,0 +1,81 @@
+MODEL = $$MODEL$$
+all: ../$(MODEL)
+
+# Enable or define during make invocation to embed content of the specified
+# directory into ROM filesystem mounted into /etc on the target
+#EMBEDROMFS = romfs
+
+PYCODEGEN = $(PYSUPSICTRL)/CodeGen
+MAINDIR = $(PYCODEGEN)/src
+LIBDIR  = $(PYCODEGEN)/rtems/lib
+INCDIR  = $(PYCODEGEN)/rtems/include
+RTEMS_MAKEFILE_PATH=/opt/rtems/6/arm-rtems6/xilinx_zynq_zedboard
+COMMON_INCDIR = $(PYCODEGEN)/Common/include
+
+SHV_INC = $(PYCODEGEN)/Common/shv/include
+ULUT_INC = $(PYSUPSICTRL)/ExtLibs/ulut
+EXT_SHV_INC = $(PYSUPSICTRL)/ExtLibs//libshv/libshvchainpack/c/include
+
+RM = rm -f
+FILES_TO_CLEAN = *.o $(MODEL) $(MAIN)-builtintab.c
+
+ifndef RTEMS_MAKEFILE_PATH
+$(warning Specify RTEMS_MAKEFILE_PATH)
+$(warning make RTEMS_MAKEFILE_PATH=/path/to/rtems/BSP/directory)
+$(error RTEMS_MAKEFILE_PATH not defined, cannot continue)
+endif
+
+ifeq ($(wildcard $(RTEMS_MAKEFILE_PATH)/Makefile.inc),)
+$(error RTEMS Makefile.inc not found at RTEMS_MAKEFILE_PATH)
+endif
+
+include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
+include $(RTEMS_CUSTOM)
+include $(CONFIG.CC)
+
+TARGET_ARCH_FLAGS ?= $(CPU_CFLAGS) $(CPU_DEFINES) $(CFLAGS_OPTIMIZE_V) \
+	-DWITHOUT_MLOCK
+
+DEFAULT_OPT_OPTS ?= $(ARCHOPTIMIZATION)
+
+ifndef OPT_OPTS
+OPT_OPTS = $(DEFAULT_OPT_OPTS)
+endif
+
+MAIN = rtems_main
+ADD_FILES = $$ADD_FILES$$
+
+OBJSSTAN = $(MAIN).o $(MODEL).o $(ADD_FILES)
+
+INCLUDES += -I$(INCDIR) -I$(COMMON_INCDIR)
+
+CFLAGS += $(TARGET_ARCH_FLAGS) $(OPT_OPTS) $(INCLUDES) -DMODEL=$(MODEL)
+
+CFLAGS += -I$(SHV_INC)
+ifneq ($(wildcard $(ULUT_INC)),)
+ULUT_INC = $(PYSUPSICTRL)/ExtLibs/ulut
+CFLAGS += -I$(ULUT_INC)
+endif
+ifneq ($(wildcard $(EXT_SHV_INC)),)
+CFLAGS += -I$(EXT_SHV_INC)
+endif
+
+CXXFLAGS = $(TARGET_ARCH_FLAGS) $(OPT_OPTS) $(INCLUDES) -DMODEL=$(MODEL)
+
+LIB = $(LIBDIR)/libpyblk.a
+SYSTEM_LIBS = -lftpfs -ltftpfs -lbsd -lm
+
+$(MAIN).c: $(MAINDIR)/$(MAIN).c $(MODEL).c
+	cp $< .
+
+%.o: ../%.c
+	$(CC) -c -o $@ $(CFLAGS) $<
+
+../$(MODEL): $(OBJSSTAN) $(OBJSSYSOVERRIDE) $(LIB)
+	$(CC) $(LDFLAGS) $(ADDITIONAL_LDFLAGS) \
+	  -o $@ $(CPU_CFLAGS) $(CPU_DEFINES) \
+	  $(OBJSSTAN) $(OBJSSYSOVERRIDE) $(LIB) $(SYSTEM_LIBS)
+	@echo "### Created executable: $(MODEL)"
+
+clean:
+	@$(RM) $(FILES_TO_CLEAN)
