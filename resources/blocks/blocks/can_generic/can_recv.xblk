@@ -1,0 +1,11 @@
+{
+  "lib": "can generic",
+  "name": "CAN RECV",
+  "ip": 0,
+  "op": 1,
+  "stin": 0,
+  "stout": 0,
+  "icon": "CAN_GEN_RECV",
+  "params": "can_recvBlk",
+  "help": ""
+}

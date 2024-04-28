@@ -1,0 +1,11 @@
+{
+  "lib": "can generic",
+  "name": "CAN SEND",
+  "ip": 0,
+  "op": 1,
+  "stin": 0,
+  "stout": 0,
+  "icon": "CAN_GEN_RECV",
+  "params": "can_sendBlk",
+  "help": ""
+}
