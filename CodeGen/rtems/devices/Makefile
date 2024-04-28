@@ -34,9 +34,14 @@ INCLUDE +=  -I$(GENERIC_INC) -I$(TARGET_INC)
 
 SRCALL = $(wildcard $(COMMON_DIR)/common_dev/*.c)
 SRCALL += $(wildcard $(COMMON_DIR)/posix/*.c)
+SRCALL += $(wildcard $(COMMON_DIR)/can/*.c)
 
 dependencies:
 	@mkdir -p $(GENERATED_INC)
+
+ifneq ($(wildcard $(RTEMS_ROOT)/$(RTEMS_TARGET)/$(RTEMS_BSP)/lib/include/dev/can/ctucanfd.h),)
+SRCALL += can.c
+endif
 
 OBJ = $(notdir $(SRCALL:.c=.o))
 
@@ -100,6 +105,9 @@ endif
 	$(CC) $(CC_FLAGS) $<
 
 %.o: $(COMMON_DIR)/posix/%.c
+	$(CC) $(CC_FLAGS) $<
+
+%.o: $(COMMON_DIR)/can/%.c
 	$(CC) $(CC_FLAGS) $<
 
 lib: $(OBJ)
